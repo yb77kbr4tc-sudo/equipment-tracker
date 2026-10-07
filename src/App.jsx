@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import EquipmentList from './components/EquipmentList'
 import EquipmentForm from './components/EquipmentForm'
 import Dashboard from './components/Dashboard'
-import { Plus, Menu, X } from 'lucide-react'
+import { Plus, Menu, X, Download, Smartphone, Search } from 'lucide-react'
 
 function App() {
   const [equipment, setEquipment] = useState([])
@@ -11,14 +11,14 @@ function App() {
   const [filterStatus, setFilterStatus] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [installPrompt, setInstallPrompt] = useState(null)
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768)
 
-  // Load from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('equipment')
     if (saved) {
       setEquipment(JSON.parse(saved))
     } else {
-      // Load sample data
       setEquipment([
         {
           id: 1,
@@ -63,10 +63,26 @@ function App() {
     }
   }, [])
 
-  // Save to localStorage whenever equipment changes
   useEffect(() => {
     localStorage.setItem('equipment', JSON.stringify(equipment))
   }, [equipment])
+
+  useEffect(() => {
+    const handleResize = () => setIsMobileView(window.innerWidth < 768)
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  useEffect(() => {
+    const handler = (event) => {
+      event.preventDefault()
+      setInstallPrompt(event)
+    }
+
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
 
   const addEquipment = (newEquipment) => {
     if (editingId) {
@@ -91,100 +107,163 @@ function App() {
   const filteredEquipment = equipment.filter(item => {
     const matchesStatus = filterStatus === 'all' || item.status === filterStatus
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.project.toLowerCase().includes(searchTerm.toLowerCase())
+      item.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.project || '').toLowerCase().includes(searchTerm.toLowerCase())
     return matchesStatus && matchesSearch
   })
 
   const editingEquipment = editingId ? equipment.find(e => e.id === editingId) : null
 
+  const handleInstall = async () => {
+    if (!installPrompt) return
+    installPrompt.prompt()
+    await installPrompt.userChoice
+    setInstallPrompt(null)
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900">🔧 Equipment Tracker</h1>
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100"
-          >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+    <div className="min-h-screen bg-slate-100 text-slate-800">
+      <header className="bg-white shadow-sm sticky top-0 z-40 border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-blue-600">Site ops</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Equipment Tracker</h1>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {installPrompt && (
+              <button
+                onClick={handleInstall}
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-3 py-2.5 text-xs sm:text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                <Download size={15} /> Install
+              </button>
+            )}
+
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+            >
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-          {/* Dashboard */}
-          <div className="lg:col-span-4">
-            <Dashboard equipment={equipment} />
-          </div>
+      <main className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mb-4 rounded-2xl border border-blue-200 bg-blue-50 px-3 py-3 text-sm font-medium text-blue-800 flex items-center gap-2">
+          <Smartphone size={18} />
+          <span>Optimized for mobile, tablet, and field use.</span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Filters & Actions */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow p-6 space-y-4">
+        <Dashboard equipment={equipment} />
+
+        {mobileMenuOpen && isMobileView && (
+          <div className="mt-4 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="space-y-3">
               <button
                 onClick={() => {
                   setEditingId(null)
                   setShowForm(!showForm)
+                  setMobileMenuOpen(false)
                 }}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2"
               >
-                <Plus size={20} /> Add Equipment
+                <Plus size={18} /> Add Equipment
               </button>
 
-              {showForm && (
-                <EquipmentForm
-                  onSubmit={addEquipment}
-                  onCancel={() => setShowForm(false)}
-                  initialData={editingEquipment}
-                />
-              )}
-
-              <div className="border-t pt-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Filter by Status</h3>
-                <div className="space-y-2">
-                  {['all', 'available', 'assigned', 'maintenance', 'broken', 'retired'].map(status => (
-                    <label key={status} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="status"
-                        value={status}
-                        checked={filterStatus === status}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className="rounded"
-                      />
-                      <span className="capitalize text-gray-700">{status}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Search</h3>
+              <div className="relative">
+                <Search className="absolute left-3 top-3.5 text-slate-400" size={16} />
                 <input
-                  type="text"
-                  placeholder="Name, Serial #, Project..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Search equipment"
+                  className="w-full rounded-xl border border-slate-300 bg-slate-50 pl-10 pr-3 py-3 text-sm outline-none focus:border-blue-500"
                 />
               </div>
+
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-3 text-sm outline-none focus:border-blue-500"
+              >
+                <option value="all">All statuses</option>
+                <option value="available">Available</option>
+                <option value="assigned">Assigned</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="broken">Broken</option>
+                <option value="retired">Retired</option>
+              </select>
             </div>
           </div>
+        )}
 
-          {/* Equipment List */}
-          <div className="lg:col-span-2">
+        <div className="mt-6 grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+          {!isMobileView && (
+            <aside className="space-y-5">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                {showForm && (
+                  <EquipmentForm
+                    initialData={editingEquipment}
+                    onSubmit={addEquipment}
+                    onCancel={() => setShowForm(false)}
+                  />
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-4 flex items-center gap-2 text-slate-900">
+                  <Search size={18} className="text-blue-600" />
+                  <h3 className="text-lg font-semibold">Filters</h3>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">Search</label>
+                    <input
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Name, serial, project..."
+                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">Status</label>
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-500"
+                    >
+                      <option value="all">All statuses</option>
+                      <option value="available">Available</option>
+                      <option value="assigned">Assigned</option>
+                      <option value="maintenance">Maintenance</option>
+                      <option value="broken">Broken</option>
+                      <option value="retired">Retired</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          )}
+
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Equipment Inventory</h2>
+                <p className="text-sm text-slate-500">{filteredEquipment.length} records</p>
+              </div>
+            </div>
+
             <EquipmentList
               equipment={filteredEquipment}
               onDelete={deleteEquipment}
               onEdit={editEquipment}
             />
-          </div>
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   )
 }
