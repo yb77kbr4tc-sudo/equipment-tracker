@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Download, FileSpreadsheet, Plus, Search, Upload, X } from 'lucide-react'
+import { Download, FileSpreadsheet, Plus, Search, Upload } from 'lucide-react'
 import Dashboard from './components/Dashboard'
 import EquipmentForm from './components/EquipmentForm'
 import EquipmentList from './components/EquipmentList'
@@ -160,22 +160,22 @@ Scaffolding Kit,Safety Equipment,SCAF-902,maintenance,,fair,5,2020-01-20,2026-10
     <div className="min-h-screen bg-slate-100 text-slate-800">
       <header className="border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Operations suite</p>
-            <h1 className="mt-2 text-3xl font-bold text-slate-900">Construction Equipment Tracker</h1>
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-600 sm:text-xs">Operations suite</p>
+            <h1 className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">Construction Equipment Tracker</h1>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
             <button
               onClick={downloadTemplate}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:w-auto"
             >
               <Download size={16} /> Download Template
             </button>
 
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 sm:w-auto"
             >
               <Upload size={16} /> Import Excel
             </button>
@@ -193,7 +193,7 @@ Scaffolding Kit,Safety Equipment,SCAF-902,maintenance,,fair,5,2020-01-20,2026-10
                 setEditingId(null)
                 setShowForm(true)
               }}
-              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 sm:w-auto"
             >
               <Plus size={16} /> Add Tool
             </button>
@@ -201,7 +201,11 @@ Scaffolding Kit,Safety Equipment,SCAF-902,maintenance,,fair,5,2020-01-20,2026-10
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50/60 p-3 text-center text-sm font-medium text-blue-800 sm:p-4">
+          Mobile and tablet friendly layout for site teams and field supervisors.
+        </div>
+
         <Dashboard equipment={equipment} />
 
         {importMessage && (
@@ -210,9 +214,9 @@ Scaffolding Kit,Safety Equipment,SCAF-902,maintenance,,fair,5,2020-01-20,2026-10
           </div>
         )}
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="mt-8 grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
           <aside className="space-y-5">
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
               {showForm && (
                 <EquipmentForm
                   initialData={editingEquipment}
@@ -225,7 +229,7 @@ Scaffolding Kit,Safety Equipment,SCAF-902,maintenance,,fair,5,2020-01-20,2026-10
               )}
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
               <div className="mb-4 flex items-center gap-2 text-slate-900">
                 <Search size={18} className="text-blue-600" />
                 <h3 className="text-lg font-semibold">Filters & Search</h3>
@@ -290,14 +294,14 @@ Scaffolding Kit,Safety Equipment,SCAF-902,maintenance,,fair,5,2020-01-20,2026-10
             </div>
           </aside>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="mb-6 flex items-center justify-between gap-3">
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-slate-900">Equipment Inventory</h2>
+                <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">Equipment Inventory</h2>
                 <p className="text-sm text-slate-500">{filteredEquipment.length} active records</p>
               </div>
 
-              <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+              <div className="inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
                 <FileSpreadsheet className="mr-1 inline-block" size={12} /> Excel ready
               </div>
             </div>

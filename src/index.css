@@ -36,6 +36,30 @@ textarea {
   font: inherit;
 }
 
+button {
+  min-height: 44px;
+}
+
+input,
+select,
+textarea {
+  min-height: 44px;
+  appearance: none;
+}
+
 input[type='radio'] {
   accent-color: #2563eb;
+}
+
+@media (max-width: 640px) {
+  body {
+    font-size: 15px;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    min-height: 46px;
+  }
 }
