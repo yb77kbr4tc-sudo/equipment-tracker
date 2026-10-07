@@ -1,0 +1,62 @@
+# Construction Equipment Tracker
+
+A modern inventory tracking dashboard for construction companies to monitor tools and equipment across job sites, warehouses, and maintenance schedules.
+
+## Features
+
+- Add, edit, and delete equipment records
+- Track status: available, assigned, maintenance, broken, retired
+- Search and filter by status, category, or keyword
+- Built-in dashboard for summary statistics
+- Import Excel or CSV files to quickly load inventory data
+- Download a starter CSV template
+- Local browser persistence for immediate use
+- Responsive interface for office and field access
+
+## Project stack
+
+- React
+- Vite
+- Tailwind CSS
+- XLSX for Excel import
+
+## Quick start
+
+```bash
+npm install
+npm run dev
+```
+
+Then open the URL shown in the terminal, typically:
+
+```text
+http://localhost:5173
+```
+
+## Importing equipment from Excel
+
+1. Download the sample template from the app.
+2. Fill in columns such as: Name, Category, Serial Number, Status, Project, Condition, Quantity, Purchase Date, Maintenance Date, Location, Assigned To, Notes.
+3. Import the file from the top-right button.
+4. The entries will be added into your equipment list automatically.
+
+## Suggested use cases
+
+- Site equipment management
+- Tool and plant tracking
+- Maintenance scheduling
+- Assignment to field crews
+- Asset register for compliance and reporting
+
+## Future enhancements
+
+- Backend + database persistence
+- Multi-user access and authentication
+- QR code scanning for asset lookup
+- Maintenance history and reminders
+- PDF / Excel export reports
+- GIS or map-based site tracking
+
+---
+
+This app is ready for immediate use as a practical construction inventory tracker.

@@ -1,94 +1,101 @@
-# Equipment Tracker
+import * as XLSX from 'xlsx'
 
-A modern web app for construction companies to track tools and equipment inventory, maintenance schedules, and allocation.
+const getValueFromRow = (row, options) => {
+  for (const key of options) {
+    const found = Object.keys(row).find((rowKey) => {
+      const normalized = normalizeKey(rowKey)
+      return normalized === normalizeKey(key)
+    })
 
-## Features
+    if (found !== undefined && row[found] !== undefined && row[found] !== null && row[found] !== '') {
+      return row[found]
+    }
+  }
 
-✅ **Equipment Inventory** - Add, edit, and delete equipment with detailed information
-✅ **Status Tracking** - Track status: Available, Assigned, Maintenance, Broken, Retired
-✅ **Project Assignment** - Assign equipment to specific projects/sites
-✅ **Condition Monitoring** - Track equipment condition: Excellent, Good, Fair, Poor
-✅ **Maintenance Schedule** - Set and track maintenance due dates
-✅ **Dashboard** - Quick stats on total equipment, available, assigned, and maintenance needed
-✅ **Search & Filter** - Find equipment quickly by name, serial number, or project
-✅ **Data Persistence** - All data saved to browser localStorage
-✅ **Responsive Design** - Works on desktop, tablet, and mobile devices
+  return ''
+}
 
-## Getting Started
+const normalizeKey = (value = '') => String(value).trim().toLowerCase().replace(/[^a-z0-9]/g, '')
 
-### Prerequisites
-- Node.js (v14 or higher)
-- npm or yarn
+const normalizeStatus = (value = '') => {
+  const status = String(value).trim().toLowerCase()
+  if (['available', 'ready', 'in stock'].includes(status)) return 'available'
+  if (['assigned', 'in use', 'deployed', 'checked out'].includes(status)) return 'assigned'
+  if (['maintenance', 'service', 'servicing', 'repair'].includes(status)) return 'maintenance'
+  if (['broken', 'damaged', 'faulty', 'repair needed'].includes(status)) return 'broken'
+  if (['retired', 'disposed', 'out of service'].includes(status)) return 'retired'
+  return 'available'
+}
 
-### Installation
+const normalizeCondition = (value = '') => {
+  const condition = String(value).trim().toLowerCase()
+  if (['excellent', 'new', 'very good'].includes(condition)) return 'excellent'
+  if (['good', 'functional'].includes(condition)) return 'good'
+  if (['fair', 'average'].includes(condition)) return 'fair'
+  if (['poor', 'bad', 'damaged'].includes(condition)) return 'poor'
+  return 'good'
+}
 
-1. Clone the repository:
-```bash
-git clone https://github.com/yb77kbr4tc-sudo/equipment-tracker.git
-cd equipment-tracker
-```
+const parseDateValue = (value) => {
+  if (!value && value !== 0) return ''
 
-2. Install dependencies:
-```bash
-npm install
-```
+  if (typeof value === 'number' && value > 10000) {
+    const date = XLSX.SSF.parse_date_code(value)
+    if (date) {
+      const yyyy = date.y
+      const mm = String(date.m).padStart(2, '0')
+      const dd = String(date.d).padStart(2, '0')
+      return `${yyyy}-${mm}-${dd}`
+    }
+  }
 
-3. Start the development server:
-```bash
-npm run dev
-```
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) return ''
 
-4. Open your browser and navigate to:
-```
-http://localhost:5173
-```
+    const parsed = new Date(trimmed)
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString().split('T')[0]
+    }
 
-## Usage
+    return trimmed
+  }
 
-1. **Add Equipment** - Click the "Add Equipment" button and fill in the form
-2. **View Equipment** - Browse all equipment in the list
-3. **Filter** - Use status filters and search to find specific items
-4. **Edit** - Click Edit on any item to modify its details
-5. **Delete** - Click Delete to remove equipment (with confirmation)
+  return ''
+}
 
-## Equipment Fields
+export const parseExcelFile = async (file) => {
+  const buffer = await file.arrayBuffer()
+  const workbook = XLSX.read(buffer, { type: 'array' })
+  const sheet = workbook.Sheets[workbook.SheetNames[0]]
+  const rows = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false })
 
-- **Name** - Equipment name (required)
-- **Category** - Type of equipment (Tools, Heavy Equipment, Safety, Vehicles, etc.)
-- **Serial Number** - Unique identifier (required)
-- **Status** - Available, Assigned, Maintenance, Broken, or Retired
-- **Project/Site** - Where the equipment is deployed
-- **Condition** - Excellent, Good, Fair, or Poor
-- **Quantity** - Number of units
-- **Purchase Date** - When acquired
-- **Maintenance Date** - When next maintenance is due
-- **Notes** - Any additional information
+  const importedRecords = rows
+    .map((row) => {
+      const name = String(getValueFromRow(row, ['name', 'equipment name', 'item name', 'tool name', 'equipment']) || '').trim()
+      const serialNumber = String(getValueFromRow(row, ['serial number', 'serial', 'asset id', 'asset number', 'tag number']) || '').trim()
 
-## Tech Stack
+      if (!name || !serialNumber) {
+        return null
+      }
 
-- **React** - UI framework
-- **Vite** - Build tool
-- **Tailwind CSS** - Styling
-- **Lucide Icons** - Icon library
-- **localStorage** - Data persistence
+      return {
+        id: Date.now() + Math.random(),
+        name,
+        category: String(getValueFromRow(row, ['category', 'type']) || 'Tools').trim() || 'Tools',
+        serialNumber,
+        status: normalizeStatus(getValueFromRow(row, ['status', 'state'])),
+        project: String(getValueFromRow(row, ['project', 'site', 'project site', 'job site']) || '').trim(),
+        condition: normalizeCondition(getValueFromRow(row, ['condition', 'health', 'state of equipment'])),
+        quantity: Number(getValueFromRow(row, ['quantity', 'qty', 'units']) || 1),
+        purchaseDate: parseDateValue(getValueFromRow(row, ['purchase date', 'purchased date', 'date purchased', 'purchase'])),
+        maintenanceDate: parseDateValue(getValueFromRow(row, ['maintenance date', 'next maintenance', 'service due', 'maintenance due'])),
+        location: String(getValueFromRow(row, ['location', 'warehouse', 'store', 'site location']) || '').trim(),
+        assignedTo: String(getValueFromRow(row, ['assigned to', 'assigned', 'operator', 'person in charge']) || '').trim(),
+        notes: String(getValueFromRow(row, ['notes', 'remarks', 'description']) || '').trim(),
+      }
+    })
+    .filter(Boolean)
 
-## Future Enhancements
-
-- [ ] Backend database integration (PostgreSQL/MongoDB)
-- [ ] User authentication and multi-site support
-- [ ] Equipment check-in/check-out workflow
-- [ ] Maintenance reminder notifications
-- [ ] Export reports (PDF/Excel)
-- [ ] QR code scanning for quick access
-- [ ] Equipment photos and documentation
-- [ ] Maintenance history log
-- [ ] Cost tracking and analytics
-- [ ] Mobile app (React Native)
-
-## License
-
-MIT
-
-## Support
-
-For issues or questions, please create an issue in the repository.
+  return importedRecords
+}
