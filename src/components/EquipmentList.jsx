@@ -9,6 +9,7 @@ function App() {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [filterStatus, setFilterStatus] = useState('all')
+  const [filterDueReturn, setFilterDueReturn] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [installPrompt, setInstallPrompt] = useState(null)
@@ -33,7 +34,8 @@ function App() {
           quantity: 1,
           notes: 'Recently serviced',
           assignedTo: 'John Smith',
-          lastCheckedOut: '2026-10-07T08:00:00.000Z'
+          lastCheckedOut: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
+          dueReturnDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString()
         },
         {
           id: 2,
@@ -48,22 +50,24 @@ function App() {
           quantity: 2,
           notes: '',
           assignedTo: '',
-          lastCheckedOut: ''
+          lastCheckedOut: '',
+          dueReturnDate: ''
         },
         {
           id: 3,
           name: 'Scaffolding Kit',
           category: 'Safety Equipment',
           serialNumber: 'SCAF-BUNDLE-12',
-          status: 'maintenance',
-          project: '',
+          status: 'assigned',
+          project: 'Site B',
           condition: 'fair',
           purchaseDate: '2020-01-20',
           maintenanceDate: '2026-10-10',
           quantity: 5,
           notes: 'Inspection due',
-          assignedTo: '',
-          lastCheckedOut: ''
+          assignedTo: 'Project Crew',
+          lastCheckedOut: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
+          dueReturnDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1).toISOString()
         }
       ])
     }
@@ -120,6 +124,9 @@ function App() {
     const site = window.prompt('Project or site name:', item.project || '')
     if (site === null) return
 
+    const dueDate = window.prompt('Return due date (YYYY-MM-DD):', item.dueReturnDate ? new Date(item.dueReturnDate).toISOString().slice(0, 10) : '')
+    if (dueDate === null) return
+
     setEquipment((prev) =>
       prev.map((entry) =>
         entry.id === id
@@ -130,6 +137,7 @@ function App() {
               project: site.trim() || entry.project || 'Field use',
               location: entry.location || 'Site stock',
               lastCheckedOut: new Date().toISOString(),
+              dueReturnDate: dueDate ? new Date(dueDate).toISOString() : '',
             }
           : entry,
       ),
@@ -147,6 +155,7 @@ function App() {
               project: '',
               location: entry.location || 'Warehouse',
               lastCheckedOut: '',
+              dueReturnDate: '',
             }
           : entry,
       ),
@@ -155,10 +164,25 @@ function App() {
 
   const filteredEquipment = equipment.filter(item => {
     const matchesStatus = filterStatus === 'all' || item.status === filterStatus
+    const matchesDueReturn = (() => {
+      if (filterDueReturn === 'all') return true
+      if (!item.dueReturnDate) return false
+
+      const dueDate = new Date(item.dueReturnDate)
+      const today = new Date()
+      const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24))
+
+      if (filterDueReturn === 'overdue') return diffDays < 0
+      if (filterDueReturn === 'dueToday') return diffDays === 0
+      if (filterDueReturn === 'dueSoon') return diffDays > 0 && diffDays <= 3
+      return true
+    })()
+
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (item.project || '').toLowerCase().includes(searchTerm.toLowerCase())
-    return matchesStatus && matchesSearch
+
+    return matchesStatus && matchesDueReturn && matchesSearch
   })
 
   const editingEquipment = editingId ? equipment.find(e => e.id === editingId) : null
@@ -243,6 +267,17 @@ function App() {
                 <option value="broken">Broken</option>
                 <option value="retired">Retired</option>
               </select>
+
+              <select
+                value={filterDueReturn}
+                onChange={(e) => setFilterDueReturn(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-3 text-sm outline-none focus:border-blue-500"
+              >
+                <option value="all">All due return</option>
+                <option value="overdue">Overdue</option>
+                <option value="dueToday">Due today</option>
+                <option value="dueSoon">Due in next 3 days</option>
+              </select>
             </div>
           </div>
         )}
@@ -290,6 +325,20 @@ function App() {
                       <option value="maintenance">Maintenance</option>
                       <option value="broken">Broken</option>
                       <option value="retired">Retired</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">Due return</label>
+                    <select
+                      value={filterDueReturn}
+                      onChange={(e) => setFilterDueReturn(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-500"
+                    >
+                      <option value="all">All due return</option>
+                      <option value="overdue">Overdue</option>
+                      <option value="dueToday">Due today</option>
+                      <option value="dueSoon">Due in 3 days</option>
                     </select>
                   </div>
                 </div>
