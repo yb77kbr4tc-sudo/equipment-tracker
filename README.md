@@ -1,101 +1,128 @@
-import * as XLSX from 'xlsx'
+import React from 'react'
+import { AlertTriangle, Edit3, Trash2, LogOut, LogIn } from 'lucide-react'
 
-const getValueFromRow = (row, options) => {
-  for (const key of options) {
-    const found = Object.keys(row).find((rowKey) => {
-      const normalized = normalizeKey(rowKey)
-      return normalized === normalizeKey(key)
-    })
+const statusStyles = {
+  available: 'bg-emerald-100 text-emerald-800',
+  assigned: 'bg-blue-100 text-blue-800',
+  maintenance: 'bg-amber-100 text-amber-800',
+  broken: 'bg-rose-100 text-rose-800',
+  retired: 'bg-slate-200 text-slate-700',
+}
 
-    if (found !== undefined && row[found] !== undefined && row[found] !== null && row[found] !== '') {
-      return row[found]
-    }
+function EquipmentList({ equipment, onDelete, onEdit, onCheckOut, onCheckIn }) {
+  if (!equipment.length) {
+    return (
+      <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center sm:p-12">
+        <AlertTriangle size={42} className="mx-auto mb-3 text-slate-400" />
+        <p className="text-lg font-semibold text-slate-700 sm:text-xl">No equipment matches your filters</p>
+        <p className="mt-2 text-sm text-slate-500">Try adjusting the search or add a new tool to the system.</p>
+      </div>
+    )
   }
 
-  return ''
+  return (
+    <div className="space-y-4">
+      {equipment.map((item) => (
+        <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm transition hover:shadow-md sm:p-5">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-lg font-bold text-slate-900 sm:text-xl">{item.name}</h3>
+                <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${statusStyles[item.status] || 'bg-slate-200 text-slate-700'}`}>
+                  {item.status}
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-slate-500">Serial: {item.serialNumber}</p>
+            </div>
+
+            <div className="flex w-full gap-2 md:w-auto">
+              {item.status === 'available' ? (
+                <button
+                  onClick={() => onCheckOut(item.id)}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100 md:flex-initial"
+                >
+                  <LogOut size={15} /> Check out
+                </button>
+              ) : (
+                <button
+                  onClick={() => onCheckIn(item.id)}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 md:flex-initial"
+                >
+                  <LogIn size={15} /> Check in
+                </button>
+              )}
+
+              <button
+                onClick={() => onEdit(item.id)}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 md:flex-initial"
+              >
+                <Edit3 size={15} /> Edit
+              </button>
+              <button
+                onClick={() => {
+                  if (window.confirm(`Delete ${item.name}?`)) {
+                    onDelete(item.id)
+                  }
+                }}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 md:flex-initial"
+              >
+                <Trash2 size={15} /> Delete
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Category</p>
+              <p className="mt-1 text-sm font-medium text-slate-800">{item.category}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Condition</p>
+              <p className="mt-1 text-sm font-medium capitalize text-slate-800">{item.condition}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Quantity</p>
+              <p className="mt-1 text-sm font-medium text-slate-800">{item.quantity || 1}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Maintenance</p>
+              <p className="mt-1 text-sm font-medium text-slate-800">
+                {item.maintenanceDate ? new Date(item.maintenanceDate).toLocaleDateString() : 'Not set'}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Project</p>
+              <p className="mt-1 text-sm text-slate-700">{item.project || '—'}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Location</p>
+              <p className="mt-1 text-sm text-slate-700">{item.location || '—'}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Assigned to</p>
+              <p className="mt-1 text-sm text-slate-700">{item.assignedTo || '—'}</p>
+            </div>
+          </div>
+
+          {item.lastCheckedOut && (
+            <div className="mt-4 rounded-xl bg-white p-3 text-sm text-slate-700">
+              <span className="font-semibold text-slate-800">Last check-out:</span>{' '}
+              {new Date(item.lastCheckedOut).toLocaleString()}
+            </div>
+          )}
+
+          {item.notes && (
+            <div className="mt-4 rounded-xl bg-white p-3 text-sm text-slate-700">
+              <span className="font-semibold text-slate-800">Notes:</span> {item.notes}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
 }
 
-const normalizeKey = (value = '') => String(value).trim().toLowerCase().replace(/[^a-z0-9]/g, '')
-
-const normalizeStatus = (value = '') => {
-  const status = String(value).trim().toLowerCase()
-  if (['available', 'ready', 'in stock'].includes(status)) return 'available'
-  if (['assigned', 'in use', 'deployed', 'checked out'].includes(status)) return 'assigned'
-  if (['maintenance', 'service', 'servicing', 'repair'].includes(status)) return 'maintenance'
-  if (['broken', 'damaged', 'faulty', 'repair needed'].includes(status)) return 'broken'
-  if (['retired', 'disposed', 'out of service'].includes(status)) return 'retired'
-  return 'available'
-}
-
-const normalizeCondition = (value = '') => {
-  const condition = String(value).trim().toLowerCase()
-  if (['excellent', 'new', 'very good'].includes(condition)) return 'excellent'
-  if (['good', 'functional'].includes(condition)) return 'good'
-  if (['fair', 'average'].includes(condition)) return 'fair'
-  if (['poor', 'bad', 'damaged'].includes(condition)) return 'poor'
-  return 'good'
-}
-
-const parseDateValue = (value) => {
-  if (!value && value !== 0) return ''
-
-  if (typeof value === 'number' && value > 10000) {
-    const date = XLSX.SSF.parse_date_code(value)
-    if (date) {
-      const yyyy = date.y
-      const mm = String(date.m).padStart(2, '0')
-      const dd = String(date.d).padStart(2, '0')
-      return `${yyyy}-${mm}-${dd}`
-    }
-  }
-
-  if (typeof value === 'string') {
-    const trimmed = value.trim()
-    if (!trimmed) return ''
-
-    const parsed = new Date(trimmed)
-    if (!Number.isNaN(parsed.getTime())) {
-      return parsed.toISOString().split('T')[0]
-    }
-
-    return trimmed
-  }
-
-  return ''
-}
-
-export const parseExcelFile = async (file) => {
-  const buffer = await file.arrayBuffer()
-  const workbook = XLSX.read(buffer, { type: 'array' })
-  const sheet = workbook.Sheets[workbook.SheetNames[0]]
-  const rows = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false })
-
-  const importedRecords = rows
-    .map((row) => {
-      const name = String(getValueFromRow(row, ['name', 'equipment name', 'item name', 'tool name', 'equipment']) || '').trim()
-      const serialNumber = String(getValueFromRow(row, ['serial number', 'serial', 'asset id', 'asset number', 'tag number']) || '').trim()
-
-      if (!name || !serialNumber) {
-        return null
-      }
-
-      return {
-        id: Date.now() + Math.random(),
-        name,
-        category: String(getValueFromRow(row, ['category', 'type']) || 'Tools').trim() || 'Tools',
-        serialNumber,
-        status: normalizeStatus(getValueFromRow(row, ['status', 'state'])),
-        project: String(getValueFromRow(row, ['project', 'site', 'project site', 'job site']) || '').trim(),
-        condition: normalizeCondition(getValueFromRow(row, ['condition', 'health', 'state of equipment'])),
-        quantity: Number(getValueFromRow(row, ['quantity', 'qty', 'units']) || 1),
-        purchaseDate: parseDateValue(getValueFromRow(row, ['purchase date', 'purchased date', 'date purchased', 'purchase'])),
-        maintenanceDate: parseDateValue(getValueFromRow(row, ['maintenance date', 'next maintenance', 'service due', 'maintenance due'])),
-        location: String(getValueFromRow(row, ['location', 'warehouse', 'store', 'site location']) || '').trim(),
-        assignedTo: String(getValueFromRow(row, ['assigned to', 'assigned', 'operator', 'person in charge']) || '').trim(),
-        notes: String(getValueFromRow(row, ['notes', 'remarks', 'description']) || '').trim(),
-      }
-    })
-    .filter(Boolean)
-
-  return importedRecords
-}
+export default EquipmentList
